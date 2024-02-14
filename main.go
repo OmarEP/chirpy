@@ -15,7 +15,7 @@ func main() {
 	corsMux := middlewareCors(mux)
 
 	srv := &http.Server{
-		Addr:    "localhost:8080",
+		Addr:    ":" + port,
 		Handler: corsMux,
 	}
 
