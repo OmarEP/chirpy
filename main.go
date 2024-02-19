@@ -26,10 +26,14 @@ func main() {
 
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", handlerReadiness)
-	apiRouter.Get("/metrics", apiCfg.handlerMetrics)
 	apiRouter.Get("/reset", apiCfg.handlerReset)
+	apiRouter.Post("/validate_chirp", handlerChirpsValidate)
 	r.Mount("/api", apiRouter)
 	
+	adminRouter := chi.NewRouter()
+	adminRouter.Get("/metrics", apiCfg.handlerMetrics)
+	r.Mount("/admin", adminRouter)
+
 	corsMux := middlewareCors(r)
 
 	srv := &http.Server{
