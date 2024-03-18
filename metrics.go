@@ -8,17 +8,18 @@ import (
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	const tpl = `
-	<html>
+	w.Write([]byte(fmt.Sprintf(`
+<html>
 
 <body>
     <h1>Welcome, Chirpy Admin</h1>
     <p>Chirpy has been visited %d times!</p>
 </body>
 
-</html>`
+</html>
+`, cfg.fileserverHits)))
 
-	w.Write([]byte(fmt.Sprintf(tpl, cfg.fileserverHits)))
+	
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
