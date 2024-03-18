@@ -6,6 +6,9 @@ import (
 	"os"
 	"sync"
 )
+
+var ErrNotExit = errors.New("resource does not exit")
+
 type DB struct {
 	path string
 	mux *sync.RWMutex
@@ -73,6 +76,19 @@ func (db *DB) createDB() error {
 		Chirps: map[int]Chirp{},
 	}
 	return db.writeDB(dbStructure)
+}
+
+func (db *DB) GetChirp(id int) (Chirp, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return Chirp{}, err 
+	}
+
+	chirp, ok := dbStructure.Chirps[id]
+	if !ok{
+		return Chirp{}, ErrNotExit
+	}
+	return chirp, nil
 }
 
 // ensureDB creates a new database file if it doesn't exit
