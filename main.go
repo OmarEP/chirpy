@@ -1,20 +1,37 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/OmarEP/chirpy/internal/database"
+	"flag"
 	"log"
 	"net/http"
+	"os"
+	"errors"
+
+	"github.com/OmarEP/chirpy/internal/database"
 )
 
 type apiConfig struct {
 	fileserverHits int
-	DB 				*database.DB
+	DB             *database.DB
 }
 
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
+
+	dbg := flag.Bool("debug", false, "Enable debug mode")
+	flag.Parse()
+
+	if *dbg {
+		_, err := os.ReadFile("database.json")
+		if !errors.Is(err, os.ErrNotExist) {
+			err := os.Remove("database.json")
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		
+	}
 
 	db, err := database.NewDB("database.json")
 	if err != nil {
@@ -22,7 +39,7 @@ func main() {
 	}
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
-		DB:				db,
+		DB:             db,
 	}
 
 	mux := http.NewServeMux()
@@ -32,7 +49,7 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpsGet)
-
+	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 
 	corsMux := middlewareCors(mux)
@@ -41,31 +58,10 @@ func main() {
 		Addr:    ":" + port,
 		Handler: corsMux,
 	}
+	
 
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe())
-}
 
-func respondWithError(w http.ResponseWriter, code int, msg string) {
-	if code > 499 {
-		log.Printf("Responding with 5xx error: %s", msg)
-	}
-	type errorResponse struct {
-		Error string `json:"error"`
-	}
-	respondWithJSON(w, code, errorResponse{
-		Error: msg,
-	})
-}
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	dat, err := json.Marshal(payload)
-	if err != nil {
-		log.Printf("Error marshalling JSON: %s", err)
-		w.WriteHeader(500)
-		return
-	}
-	w.WriteHeader(code)
-	w.Write(dat)
+	
 }
