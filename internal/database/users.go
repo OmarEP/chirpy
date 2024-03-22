@@ -1,11 +1,23 @@
 package database
 
+import (
+	"errors"
+)
+
 type User struct {
-	ID		int		`json:"id"`
-	Email 	string	`json:"email"`
+	ID				int		`json:"id"`
+	Email 			string	`json:"email"`
+	HashedPassword 	string	`json:"hashed_password"`
 }
 
-func (db *DB) CreateUser(email string) (User, error) {
+var ErrAlreadyExits = errors.New("already exists")
+
+func (db *DB) CreateUser(email, HashPassword string) (User, error) {
+	if _, err := db.GetUserByEmail(email); !errors.Is(err, ErrNotExit) {
+		return User{}, ErrAlreadyExits
+	}
+	
+	
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err 
@@ -15,7 +27,9 @@ func (db *DB) CreateUser(email string) (User, error) {
 	user := User {
 		ID:		id, 
 		Email: 	email,
+		HashedPassword: HashPassword,
 	}
+
 	dbStructure.Users[id] = user 
 
 	err = db.writeDB(dbStructure)
@@ -23,6 +37,21 @@ func (db *DB) CreateUser(email string) (User, error) {
 		return User{}, err 
 	}
 	return user, nil
+}
+
+func (db *DB) GetUserByEmail(email string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err 
+	}
+
+	for _, user := range dbStructure.Users {
+		if user.Email == email {
+			return user, nil 
+		}
+	}
+
+	return User{}, ErrNotExit
 }
 
 func (db *DB) GetUser(id int) (User, error) {
