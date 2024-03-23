@@ -1,21 +1,25 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"net/http"
 	"os"
-	"errors"
 
 	"github.com/OmarEP/chirpy/internal/database"
+	"github.com/joho/godotenv"
 )
 
 type apiConfig struct {
 	fileserverHits int
+	jwtSecret      string
 	DB             *database.DB
 }
 
 func main() {
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
 	const filepathRoot = "."
 	const port = "8080"
 
@@ -30,7 +34,7 @@ func main() {
 				log.Fatal(err)
 			}
 		}
-		
+
 	}
 
 	db, err := database.NewDB("database.json")
@@ -39,6 +43,7 @@ func main() {
 	}
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
+		jwtSecret:      jwtSecret,
 		DB:             db,
 	}
 
@@ -50,6 +55,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpsGet)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
+	mux.HandleFunc("PUT /api/users", apiCfg.handlerPutUsers)
 	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 
@@ -59,10 +65,8 @@ func main() {
 		Addr:    ":" + port,
 		Handler: corsMux,
 	}
-	
 
 	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
 	log.Fatal(srv.ListenAndServe())
 
-	
 }
