@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"sync"
+
 )
 
 var ErrNotExit = errors.New("resource does not exit")
@@ -17,6 +18,7 @@ type DB struct {
 type DBStructure struct {
 	Chirps 	map[int]Chirp `json:"chirps"`
 	Users 	map[int]User  `json:"users"`
+	Revocations map[string]Revocation `json:"revoked_tokens"`
 }
 
 // NewDB creates a new database connection
@@ -35,6 +37,7 @@ func (db *DB) createDB() error {
 	dbStructure := DBStructure{
 		Chirps: map[int]Chirp{},
 		Users:	map[int]User{},
+		Revocations: map[string]Revocation{},
 	}
 	return db.writeDB(dbStructure)
 }

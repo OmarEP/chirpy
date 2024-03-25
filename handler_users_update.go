@@ -59,7 +59,7 @@ func (cfg *apiConfig) handlerPutUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, http.StatusOK,response {
-		User{
+		User: User{
 			ID: user.ID,
 			Email: user.Email,
 		},
