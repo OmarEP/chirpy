@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"log"
 	"net/http"
@@ -12,38 +11,44 @@ import (
 )
 
 type apiConfig struct {
-	fileserverHits int
-	jwtSecret      string
-	DB             *database.DB
+	fileserverHits 	int
+	jwtSecret      	string
+	polkaKey 		string
+	DB             	*database.DB
 }
 
 func main() {
-	godotenv.Load()
-	jwtSecret := os.Getenv("JWT_SECRET")
 	const filepathRoot = "."
 	const port = "8080"
 
-	dbg := flag.Bool("debug", false, "Enable debug mode")
-	flag.Parse()
-
-	if *dbg {
-		_, err := os.ReadFile("database.json")
-		if !errors.Is(err, os.ErrNotExist) {
-			err := os.Remove("database.json")
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET environment variable is not set")
+	}
+	polkaKey := os.Getenv("POLKA_KEY")
+	if polkaKey == "" {
+		log.Fatal("POLkA_KEY environment variable is not set")
 	}
 
 	db, err := database.NewDB("database.json")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	dbg := flag.Bool("debug", false, "Enable debug mode")
+	flag.Parse()
+	if dbg != nil && *dbg {
+		err := db.ResetDB()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
 		jwtSecret:      jwtSecret,
+		polkaKey: 		polkaKey,
 		DB:             db,
 	}
 
@@ -64,6 +69,8 @@ func main() {
 	mux.HandleFunc("POST /api/refresh", apiCfg.handlerRefresh)
 	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
+
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerWebhook)
 
 	corsMux := middlewareCors(mux)
 

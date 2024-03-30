@@ -8,7 +8,7 @@ import (
 
 )
 
-var ErrNotExit = errors.New("resource does not exit")
+var ErrNotExist = errors.New("resource does not exit")
 
 type DB struct {
 	path string
@@ -52,6 +52,13 @@ func (db *DB) ensureDB() error {
 	return err 
 }
 
+func (db *DB) ResetDB() error {
+	err := os.Remove(db.path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil 
+	}
+	return db.ensureDB()
+}
 
 // loadDB reads the database file into memory
 func (db *DB) loadDB() (DBStructure, error) {

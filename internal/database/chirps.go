@@ -66,7 +66,7 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 
 	chirp, ok := dbStructure.Chirps[id]
 	if !ok {
-		return Chirp{}, ErrNotExit
+		return Chirp{}, ErrNotExist
 	}
 
 	return chirp, nil
